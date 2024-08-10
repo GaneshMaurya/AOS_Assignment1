@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
                     }
 
                     inputDataBuffer = (char *)malloc(currAllocSpace);
-                    cout << currAllocSpace << "\n";
 
                     lseek(inputFile, -currBufferSize, SEEK_END);
                     read(inputFile, inputDataBuffer, currAllocSpace);
