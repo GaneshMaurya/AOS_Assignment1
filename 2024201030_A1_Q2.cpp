@@ -80,9 +80,9 @@ int main(int argc, char *argv[])
     if (inputFileSize == outputFileSize)
     {
         isSizeSame = "Yes";
-        // cout << "Input File Size: " << inputFileSize << "B\n";
-        // cout << "Output File Size: " << outputFileSize << "B\n";
-        // cout << "Both Files Sizes are Same : Yes\n";
+        cout << "Input File Size: " << inputFileSize << "B\n";
+        cout << "Output File Size: " << outputFileSize << "B\n";
+        cout << "Both Files Sizes are Same : Yes\n";
     }
     else
     {

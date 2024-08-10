@@ -8,15 +8,17 @@
 using namespace std;
 
 // Define the buffer size beforehand.
-const int BUFFER_SIZE = 100;
+const int BUFFER_SIZE = 4000;
 
 void reverseString(string &str, int start, int end)
 {
-    while (start < end)
+    int i = start;
+    int j = end;
+    while (i <= j)
     {
-        swap(str[start], str[end]);
-        start++;
-        end--;
+        swap(str[i], str[j]);
+        i++;
+        j--;
     }
 }
 
@@ -78,44 +80,55 @@ int main(int argc, char *argv[])
 
                 off_t totalSize = lseek(inputFile, 0, SEEK_END);
                 size_t currBufferSize = 0;
-                while (totalSize > 0)
+                size_t currAllocSpace = 0;
+                while (currBufferSize < totalSize)
                 {
-                    if (totalSize >= BUFFER_SIZE)
+                    bool fl = false;
+                    if (currBufferSize + BUFFER_SIZE <= totalSize)
                     {
-                        currBufferSize = BUFFER_SIZE;
+                        currAllocSpace = BUFFER_SIZE;
+                        currBufferSize += BUFFER_SIZE;
                     }
                     else
                     {
+                        currAllocSpace = totalSize - currBufferSize;
                         currBufferSize = totalSize;
                     }
-                    inputDataBuffer = (char *)malloc(currBufferSize * (sizeof(char)));
 
-                    lseek(inputFile, -currBufferSize, SEEK_CUR);
-                    read(inputFile, inputDataBuffer, currBufferSize);
+                    inputDataBuffer = (char *)malloc(currAllocSpace);
+                    cout << currAllocSpace << "\n";
+
+                    lseek(inputFile, -currBufferSize, SEEK_END);
+                    read(inputFile, inputDataBuffer, currAllocSpace);
 
                     string str = inputDataBuffer;
-                    reverseString(str, 0, str.size() - 1);
+                    reverseString(str, 0, currAllocSpace - 1);
 
-                    char outputDataBuffer[str.size()];
-                    for (int i = 0; i < str.size(); i++)
+                    char outputDataBuffer[currAllocSpace];
+                    for (int i = 0; i < currAllocSpace; i++)
                     {
                         outputDataBuffer[i] = str[i];
                     }
 
-                    ssize_t outputSize = write(outputFile, outputDataBuffer, str.size());
+                    ssize_t outputSize = write(outputFile, outputDataBuffer, currAllocSpace);
                     if (outputSize < 0)
                     {
                         cout << "Error in writing content onto the file.\n";
                         return 0;
                     }
 
-                    totalSize -= currBufferSize;
-                    lseek(inputFile, -currBufferSize, SEEK_CUR);
                     free(inputDataBuffer);
+
+                    // if (fl == true)
+                    // {
+                    //     break;
+                    // }
                 }
 
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
                 printf("File took %lfs to reverse and write onto new text file.\n", time2 - time1);
+                close(inputFile);
+                close(outputFile);
             }
         }
     }
