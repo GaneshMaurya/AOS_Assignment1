@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     ios_base::sync_with_stdio();
     cin.tie(NULL);
     cout.tie(NULL);
-// To check the folder and file information
+    // To check the folder and file information
     const char *INPUT_FILE_PATH = argv[1];
     int flag = stoi(argv[2]);
     const char *FOLDER_PATH = "Assignment1/";
@@ -35,11 +35,12 @@ int main(int argc, char *argv[])
         // Reverse the file
         // Make a directory and file RWX access group and user
         // Check if folder is already created
-        if (mkdir(FOLDER_PATH, 0770) < 0 && errno == EEXIST)
+        int createDir = mkdir(FOLDER_PATH, 0750);
+        if (createDir < 0 && errno == EEXIST)
         {
             // Folder already exists. Hence deleting all its contents.
             rmdir(FOLDER_PATH);
-            mkdir(FOLDER_PATH, 0770);
+            mkdir(FOLDER_PATH, 0750);
         }
 
         // Open file in Read only mode
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
                 string OUTPUT_FILE_NAME = "output.txt";
                 string OUTPUT_FILE_PATH = FOLDER_PATH + OUTPUT_FILE_NAME;
 
-                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0770);
+                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0760);
                 if (outputFile < 0)
                 {
                     // Errors - Handle this
