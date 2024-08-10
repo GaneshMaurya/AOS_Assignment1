@@ -83,7 +83,6 @@ int main(int argc, char *argv[])
                 size_t currAllocSpace = 0;
                 while (currBufferSize < totalSize)
                 {
-                    bool fl = false;
                     if (currBufferSize + BUFFER_SIZE <= totalSize)
                     {
                         currAllocSpace = BUFFER_SIZE;
@@ -115,13 +114,10 @@ int main(int argc, char *argv[])
                         cout << "Error in writing content onto the file.\n";
                         return 0;
                     }
+                    double percentage = ((double)currBufferSize * 100.0 / (double)totalSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
-
-                    // if (fl == true)
-                    // {
-                    //     break;
-                    // }
                 }
 
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
@@ -144,15 +140,9 @@ int main(int argc, char *argv[])
 
         if (mkdir(FOLDER_PATH, 0770) < 0 && errno == EEXIST)
         {
-            if (rmdir(FOLDER_PATH) == 0)
-            {
-                cout << "Folder does not exist. Proceeding to create.\n";
-            }
-            else
-            {
-                cout << "Folder already exists. Hence deleting all its contents.\n";
-            }
-            mkdir(FOLDER_PATH, 0770);
+            // Folder already exists. Hence deleting all its contents.
+            rmdir(FOLDER_PATH);
+            mkdir(FOLDER_PATH, 0750);
         }
 
         // Open file in Read only mode
@@ -165,10 +155,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // Function to read a file. Reads n Bytes of the input.txt file and stores it in the below char array
-            char inputDataBuffer[BUFFER_SIZE];
-
-            // lseek(inputFile, BUFFER_SIZE, SEEK_SET);
+            char *inputDataBuffer = (char *)malloc(BUFFER_SIZE * (sizeof(char)));
             ssize_t inputSize = read(inputFile, inputDataBuffer, BUFFER_SIZE);
 
             if (inputSize == 0)
@@ -178,22 +165,10 @@ int main(int argc, char *argv[])
             }
             else
             {
-                string str = inputDataBuffer;
-
-                double time1 = (double)clock() / CLOCKS_PER_SEC;
-                reverseString(str, 0, start_index - 1);
-                reverseString(str, end_index + 1, str.size() - 1);
-
-                char outputDataBuffer[str.size()];
-                for (int i = 0; i < str.size(); i++)
-                {
-                    outputDataBuffer[i] = str[i];
-                }
-
                 string OUTPUT_FILE_NAME = "output.txt";
                 string OUTPUT_FILE_PATH = FOLDER_PATH + OUTPUT_FILE_NAME;
 
-                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0770);
+                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0660);
                 if (outputFile < 0)
                 {
                     // Errors - Handle this
@@ -201,15 +176,127 @@ int main(int argc, char *argv[])
                     return 0;
                 }
 
-                ssize_t outputSize = write(outputFile, outputDataBuffer, str.size());
-                if (outputSize < 0)
+                double time1 = (double)clock() / CLOCKS_PER_SEC;
+
+                size_t totalSize = lseek(inputFile, 0, SEEK_END);
+                size_t currPointer = 0;
+                size_t currBuffer = 0;
+
+                lseek(inputFile, start_index, SEEK_SET);
+                while (currPointer < start_index)
                 {
-                    cout << "Error in writing content onto the file.\n";
-                    return 0;
+                    if (currPointer + BUFFER_SIZE <= start_index)
+                    {
+                        currPointer += BUFFER_SIZE;
+                        currBuffer = BUFFER_SIZE;
+                    }
+                    else
+                    {
+                        currBuffer = start_index - currPointer;
+                        currPointer = start_index;
+                    }
+
+                    // cout << currPointer << endl;
+
+                    inputDataBuffer = (char *)malloc(currBuffer);
+
+                    lseek(inputFile, -currPointer, start_index);
+                    read(inputFile, inputDataBuffer, currBuffer);
+
+                    string str = inputDataBuffer;
+                    reverseString(str, 0, currBuffer - 1);
+
+                    char outputDataBuffer[currBuffer];
+                    for (int i = 0; i < currBuffer; i++)
+                    {
+                        outputDataBuffer[i] = str[i];
+                    }
+
+                    ssize_t outputSize = write(outputFile, outputDataBuffer, currBuffer);
+                    if (outputSize < 0)
+                    {
+                        cout << "Error in writing content onto the file.\n";
+                        return 0;
+                    }
+
+                    free(inputDataBuffer);
+                }
+
+                lseek(inputFile, start_index, SEEK_SET);
+                while (currPointer < end_index)
+                {
+                    if (currPointer + BUFFER_SIZE <= end_index)
+                    {
+                        currPointer += BUFFER_SIZE;
+                        currBuffer = BUFFER_SIZE;
+                    }
+                    else
+                    {
+                        currBuffer = end_index - currPointer;
+                        currPointer = end_index;
+                    }
+
+                    // cout << currPointer << endl;
+
+                    inputDataBuffer = (char *)malloc(currBuffer);
+
+                    lseek(inputFile, currPointer, start_index);
+                    read(inputFile, inputDataBuffer, currBuffer);
+
+                    size_t outputSize = write(outputFile, inputDataBuffer, currBuffer);
+                    if (outputSize < 0)
+                    {
+                        cout << "Error in writing content onto the file.\n";
+                        return 0;
+                    }
+
+                    free(inputDataBuffer);
+                }
+
+                lseek(inputFile, 0, SEEK_END);
+                while (currPointer < totalSize)
+                {
+                    if (currPointer + BUFFER_SIZE <= totalSize)
+                    {
+                        currPointer += BUFFER_SIZE;
+                        currBuffer = BUFFER_SIZE;
+                    }
+                    else
+                    {
+                        currBuffer = totalSize - currPointer;
+                        currPointer = totalSize;
+                    }
+
+                    // cout << currPointer << endl;
+
+                    inputDataBuffer = (char *)malloc(currBuffer);
+
+                    lseek(inputFile, -currPointer, SEEK_END);
+                    read(inputFile, inputDataBuffer, currBuffer);
+
+                    string str = inputDataBuffer;
+                    reverseString(str, 0, currBuffer - 1);
+
+                    char outputDataBuffer[currBuffer];
+                    for (int i = 0; i < currBuffer; i++)
+                    {
+                        outputDataBuffer[i] = str[i];
+                    }
+
+                    ssize_t outputSize = write(outputFile, outputDataBuffer, currBuffer);
+                    if (outputSize < 0)
+                    {
+                        cout << "Error in writing content onto the file.\n";
+                        return 0;
+                    }
+
+                    free(inputDataBuffer);
                 }
 
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
                 printf("File took %lfs to reverse and write onto new text file.\n", time2 - time1);
+                close(inputFile);
+                close(outputFile);
             }
         }
     }
