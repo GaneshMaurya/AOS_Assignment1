@@ -71,14 +71,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                string str = "";
-                for (int i = 0; i < BUFFER_SIZE; i++)
-                {
-                    if (inputDataBuffer[i] != ' ')
-                    {
-                        str += inputDataBuffer[i];
-                    }
-                }
+                string str = inputDataBuffer;
 
                 double time1 = (double)clock() / CLOCKS_PER_SEC;
                 reverseString(str, 0, str.size() - 1);
@@ -159,18 +152,11 @@ int main(int argc, char *argv[])
             }
             else
             {
-                string str = "";
-                for (int i = 0; i < BUFFER_SIZE; i++)
-                {
-                    if (inputDataBuffer[i] != ' ')
-                    {
-                        str += inputDataBuffer[i];
-                    }
-                }
+                string str = inputDataBuffer;
 
                 double time1 = (double)clock() / CLOCKS_PER_SEC;
                 reverseString(str, 0, start_index - 1);
-                reverseString(str, end_index, str.size() - 1);
+                reverseString(str, end_index + 1, str.size() - 1);
 
                 char outputDataBuffer[str.size()];
                 for (int i = 0; i < str.size(); i++)
