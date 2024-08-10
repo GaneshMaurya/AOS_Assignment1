@@ -59,9 +59,40 @@ int main(int argc, char *argv[])
     const char *OLD_FILE_PATH = argv[2];
     const char *DIR_FILE_PATH = argv[3];
 
-    printPermissions(NEW_FILE_PATH, "newfile");
-    printPermissions(OLD_FILE_PATH, "old file");
-    printPermissions(DIR_FILE_PATH, "directory");
+    string isDirCreated;
+    struct stat dirInfo;
+    int dirStat = stat(DIR_FILE_PATH, &dirInfo);
+    if (dirStat != -1)
+    {
+        isDirCreated = "Yes";
+    }
+
+    struct stat newFileInfo;
+    int newFileStat = stat(NEW_FILE_PATH, &newFileInfo);
+    struct stat oldFileInfo;
+    int oldFileStat = stat(OLD_FILE_PATH, &oldFileInfo);
+
+    off_t inputFileSize = newFileInfo.st_size;
+    off_t outputFileSize = newFileInfo.st_size;
+
+    string isSizeSame;
+
+    if (inputFileSize == outputFileSize)
+    {
+        isSizeSame = "Yes";
+        // cout << "Input File Size: " << inputFileSize << "B\n";
+        // cout << "Output File Size: " << outputFileSize << "B\n";
+        // cout << "Both Files Sizes are Same : Yes\n";
+    }
+    else
+    {
+        isSizeSame = "No";
+        // cout << "Both Files Sizes are Same : No\n";
+    }
+
+    // printPermissions(NEW_FILE_PATH, "newfile");
+    // printPermissions(OLD_FILE_PATH, "old file");
+    // printPermissions(DIR_FILE_PATH, "directory");
 
     return 0;
 }
