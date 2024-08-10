@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     ios_base::sync_with_stdio();
     cin.tie(NULL);
     cout.tie(NULL);
-
+// To check the folder and file information
     const char *INPUT_FILE_PATH = argv[1];
     int flag = stoi(argv[2]);
     const char *FOLDER_PATH = "Assignment1/";
@@ -33,18 +33,12 @@ int main(int argc, char *argv[])
     if (flag == 0)
     {
         // Reverse the file
-        // Make a directory and five RWX access group and user
+        // Make a directory and file RWX access group and user
         // Check if folder is already created
         if (mkdir(FOLDER_PATH, 0770) < 0 && errno == EEXIST)
         {
-            if (rmdir(FOLDER_PATH) == 0)
-            {
-                cout << "Folder does not exist. Proceeding to create.\n";
-            }
-            else
-            {
-                cout << "Folder already exists. Hence deleting all its contents.\n";
-            }
+            // Folder already exists. Hence deleting all its contents.
+            rmdir(FOLDER_PATH);
             mkdir(FOLDER_PATH, 0770);
         }
 
