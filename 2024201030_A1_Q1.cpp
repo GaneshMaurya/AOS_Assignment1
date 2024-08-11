@@ -8,7 +8,7 @@
 using namespace std;
 
 // Define the buffer size beforehand.
-const int BUFFER_SIZE = 4000;
+const int BUFFER_SIZE = 2;
 
 void reverseString(string &str, int start, int end)
 {
@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 
                     free(inputDataBuffer);
                 }
+                cout << "\n";
 
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
                 printf("File took %lfs to reverse and write onto new text file.\n", time2 - time1);
@@ -179,28 +180,24 @@ int main(int argc, char *argv[])
                 double time1 = (double)clock() / CLOCKS_PER_SEC;
 
                 size_t totalSize = lseek(inputFile, 0, SEEK_END);
-                size_t currPointer = 0;
-                size_t currBuffer = 0;
-
                 lseek(inputFile, start_index, SEEK_SET);
-                while (currPointer < start_index)
+                size_t currPointer = start_index;
+                size_t currBuffer = 0;
+                while (currPointer > 0)
                 {
-                    if (currPointer + BUFFER_SIZE <= start_index)
+                    if (currPointer - BUFFER_SIZE >= 0)
                     {
-                        currPointer += BUFFER_SIZE;
                         currBuffer = BUFFER_SIZE;
+                        currPointer -= BUFFER_SIZE;
                     }
                     else
                     {
-                        currBuffer = start_index - currPointer;
-                        currPointer = start_index;
+                        currBuffer = currPointer;
+                        currPointer = 0;
                     }
 
-                    // cout << currPointer << endl;
-
                     inputDataBuffer = (char *)malloc(currBuffer);
-
-                    lseek(inputFile, -currPointer, start_index);
+                    lseek(inputFile, -currPointer, SEEK_SET);
                     read(inputFile, inputDataBuffer, currBuffer);
 
                     string str = inputDataBuffer;
@@ -218,59 +215,60 @@ int main(int argc, char *argv[])
                         cout << "Error in writing content onto the file.\n";
                         return 0;
                     }
+                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
                 }
 
                 lseek(inputFile, start_index, SEEK_SET);
-                while (currPointer < end_index)
+                currPointer = start_index;
+                while (currPointer <= end_index)
                 {
-                    if (currPointer + BUFFER_SIZE <= end_index)
+                    if (currPointer + BUFFER_SIZE <= end_index + 1)
                     {
-                        currPointer += BUFFER_SIZE;
                         currBuffer = BUFFER_SIZE;
+                        currPointer += BUFFER_SIZE;
                     }
                     else
                     {
                         currBuffer = end_index - currPointer;
-                        currPointer = end_index;
+                        currPointer = end_index + 1;
                     }
 
-                    // cout << currPointer << endl;
-
                     inputDataBuffer = (char *)malloc(currBuffer);
-
-                    lseek(inputFile, currPointer, start_index);
                     read(inputFile, inputDataBuffer, currBuffer);
+                    lseek(inputFile, currPointer, SEEK_SET);
 
-                    size_t outputSize = write(outputFile, inputDataBuffer, currBuffer);
+                    ssize_t outputSize = write(outputFile, inputDataBuffer, currBuffer);
                     if (outputSize < 0)
                     {
                         cout << "Error in writing content onto the file.\n";
                         return 0;
                     }
+                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
                 }
 
                 lseek(inputFile, 0, SEEK_END);
-                while (currPointer < totalSize)
+                currPointer = 0;
+                size_t remSize = totalSize - end_index;
+                while (currPointer < remSize)
                 {
-                    if (currPointer + BUFFER_SIZE <= totalSize)
+                    if (currPointer + BUFFER_SIZE <= remSize)
                     {
-                        currPointer += BUFFER_SIZE;
                         currBuffer = BUFFER_SIZE;
+                        currPointer += BUFFER_SIZE;
                     }
                     else
                     {
-                        currBuffer = totalSize - currPointer;
-                        currPointer = totalSize;
+                        currBuffer = currPointer - end_index;
+                        currPointer = end_index;
                     }
 
-                    // cout << currPointer << endl;
-
                     inputDataBuffer = (char *)malloc(currBuffer);
-
                     lseek(inputFile, -currPointer, SEEK_END);
                     read(inputFile, inputDataBuffer, currBuffer);
 
@@ -289,10 +287,13 @@ int main(int argc, char *argv[])
                         cout << "Error in writing content onto the file.\n";
                         return 0;
                     }
+                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
                 }
 
+                cout << "\n";
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
                 printf("File took %lfs to reverse and write onto new text file.\n", time2 - time1);
                 close(inputFile);
