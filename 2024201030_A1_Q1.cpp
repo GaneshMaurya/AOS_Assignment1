@@ -8,7 +8,7 @@
 using namespace std;
 
 // Define the buffer size beforehand.
-const int BUFFER_SIZE = 2;
+const int BUFFER_SIZE = 4000;
 
 void reverseString(string &str, int start, int end)
 {
@@ -179,123 +179,143 @@ int main(int argc, char *argv[])
 
                 double time1 = (double)clock() / CLOCKS_PER_SEC;
 
-                size_t totalSize = lseek(inputFile, 0, SEEK_END);
-                lseek(inputFile, start_index, SEEK_SET);
-                size_t currPointer = start_index;
-                size_t currBuffer = 0;
+                // Reverse first part (from 0 to start_index - 1)
+                size_t fileSize = lseek(inputFile, 0, SEEK_END);
+                int currPointer = start_index;
+                size_t chunk = 0;
+
+                size_t totalSizeTillNow = 0;
+
+                // Reverse first portion
                 while (currPointer > 0)
                 {
-                    if (currPointer - BUFFER_SIZE >= 0)
+                    if (currPointer >= BUFFER_SIZE)
                     {
-                        currBuffer = BUFFER_SIZE;
                         currPointer -= BUFFER_SIZE;
+                        chunk = BUFFER_SIZE;
                     }
                     else
                     {
-                        currBuffer = currPointer;
+                        chunk = currPointer;
                         currPointer = 0;
                     }
 
-                    inputDataBuffer = (char *)malloc(currBuffer);
-                    lseek(inputFile, -currPointer, SEEK_SET);
-                    read(inputFile, inputDataBuffer, currBuffer);
+                    inputDataBuffer = (char *)malloc(chunk);
+
+                    lseek(inputFile, currPointer, SEEK_SET);
+                    read(inputFile, inputDataBuffer, chunk);
 
                     string str = inputDataBuffer;
-                    reverseString(str, 0, currBuffer - 1);
+                    reverseString(str, 0, chunk - 1);
 
-                    char outputDataBuffer[currBuffer];
-                    for (int i = 0; i < currBuffer; i++)
+                    char *outputDataBuffer = (char *)malloc(chunk);
+                    for (int i = 0; i < chunk; i++)
                     {
                         outputDataBuffer[i] = str[i];
                     }
 
-                    ssize_t outputSize = write(outputFile, outputDataBuffer, currBuffer);
+                    ssize_t outputSize = write(outputFile, outputDataBuffer, chunk);
                     if (outputSize < 0)
                     {
-                        cout << "Error in writing content onto the file.\n";
+                        cout << "Error in writing content onto the file first step.\n";
                         return 0;
                     }
-                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
-                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
+                    free(outputDataBuffer);
+
+                    totalSizeTillNow += chunk;
+                    double percentage = ((double)totalSizeTillNow * 100.0 / (double)fileSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
                 }
 
+                // Write the second protion as it is
                 lseek(inputFile, start_index, SEEK_SET);
                 currPointer = start_index;
-                while (currPointer <= end_index)
+                while (currPointer < end_index + 1)
                 {
-                    if (currPointer + BUFFER_SIZE <= end_index + 1)
+                    int flag = false;
+                    if (currPointer + BUFFER_SIZE <= end_index)
                     {
-                        currBuffer = BUFFER_SIZE;
                         currPointer += BUFFER_SIZE;
+                        chunk = BUFFER_SIZE;
                     }
                     else
                     {
-                        currBuffer = end_index - currPointer;
+                        chunk = end_index - currPointer + 1;
+                        currPointer = end_index + 1;
+                        flag = true;
+                    }
+
+                    inputDataBuffer = (char *)malloc(chunk);
+                    read(inputFile, inputDataBuffer, chunk);
+                    lseek(inputFile, currPointer, SEEK_SET);
+
+                    ssize_t outputSize = write(outputFile, inputDataBuffer, chunk);
+                    if (outputSize < 0)
+                    {
+                        cout << "Error in writing content onto the file second step.\n";
+                        return 0;
+                    }
+
+                    free(inputDataBuffer);
+                    totalSizeTillNow += chunk;
+                    double percentage = ((double)totalSizeTillNow * 100.0 / (double)fileSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
+                }
+
+                // Reverse the last protion
+                currPointer = fileSize;
+                while (currPointer > end_index)
+                {
+                    bool flag = false;
+                    if (currPointer - BUFFER_SIZE > end_index)
+                    {
+                        currPointer -= BUFFER_SIZE;
+                        chunk = BUFFER_SIZE;
+                    }
+                    else
+                    {
+                        flag = true;
+                        chunk = currPointer - (end_index + 1);
                         currPointer = end_index + 1;
                     }
 
-                    inputDataBuffer = (char *)malloc(currBuffer);
-                    read(inputFile, inputDataBuffer, currBuffer);
+                    inputDataBuffer = (char *)malloc(chunk);
                     lseek(inputFile, currPointer, SEEK_SET);
-
-                    ssize_t outputSize = write(outputFile, inputDataBuffer, currBuffer);
-                    if (outputSize < 0)
-                    {
-                        cout << "Error in writing content onto the file.\n";
-                        return 0;
-                    }
-                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
-                    cout << "\r" << "Progress = " << percentage << " %" << flush;
-
-                    free(inputDataBuffer);
-                }
-
-                lseek(inputFile, 0, SEEK_END);
-                currPointer = 0;
-                size_t remSize = totalSize - end_index;
-                while (currPointer < remSize)
-                {
-                    if (currPointer + BUFFER_SIZE <= remSize)
-                    {
-                        currBuffer = BUFFER_SIZE;
-                        currPointer += BUFFER_SIZE;
-                    }
-                    else
-                    {
-                        currBuffer = currPointer - end_index;
-                        currPointer = end_index;
-                    }
-
-                    inputDataBuffer = (char *)malloc(currBuffer);
-                    lseek(inputFile, -currPointer, SEEK_END);
-                    read(inputFile, inputDataBuffer, currBuffer);
+                    read(inputFile, inputDataBuffer, chunk);
 
                     string str = inputDataBuffer;
-                    reverseString(str, 0, currBuffer - 1);
+                    reverseString(str, 0, chunk - 1);
 
-                    char outputDataBuffer[currBuffer];
-                    for (int i = 0; i < currBuffer; i++)
+                    char *outputDataBuffer = (char *)malloc(chunk);
+                    for (int i = 0; i < chunk; i++)
                     {
                         outputDataBuffer[i] = str[i];
                     }
 
-                    ssize_t outputSize = write(outputFile, outputDataBuffer, currBuffer);
+                    ssize_t outputSize = write(outputFile, outputDataBuffer, chunk);
                     if (outputSize < 0)
                     {
-                        cout << "Error in writing content onto the file.\n";
+                        cout << "Error in writing content onto the file last step.\n";
                         return 0;
                     }
-                    double percentage = ((double)currBuffer * 100.0 / (double)totalSize);
-                    cout << "\r" << "Progress = " << percentage << " %" << flush;
 
                     free(inputDataBuffer);
+                    free(outputDataBuffer);
+
+                    totalSizeTillNow += chunk;
+                    double percentage = ((double)totalSizeTillNow * 100.0 / (double)fileSize);
+                    cout << "\r" << "Progress = " << percentage << " %" << flush;
+
+                    if (flag == true)
+                    {
+                        break;
+                    }
                 }
 
-                cout << "\n";
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
-                printf("File took %lfs to reverse and write onto new text file.\n", time2 - time1);
+                printf("File took %lfs to do the operations and write onto new text file.\n", time2 - time1);
                 close(inputFile);
                 close(outputFile);
             }
