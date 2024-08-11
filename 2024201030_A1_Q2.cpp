@@ -31,6 +31,8 @@ void printPermissions(const char *PATH, string fileType)
         string othersWrite = (mode & 0002) ? "Yes" : "No";
         string othersExec = (mode & 0001) ? "Yes" : "No";
 
+        cout << "---------------------------------------------------------------\n";
+
         cout << "User has read permissions on " << fileType << ": " << userRead << "\n";
         cout << "User has write permission on " << fileType << ": " << userWrite << "\n";
         cout << "User has execute permission on " << fileType << ": " << userExec << "\n";
@@ -49,15 +51,101 @@ void printPermissions(const char *PATH, string fileType)
     }
 }
 
+const int BUFFER_SIZE = 4000;
+
+bool checkRev(char *inputChunk, char *outputChunk)
+{
+    int n = strlen(outputChunk);
+
+    int i = 0;
+    int j = n - 1;
+
+    while (i < n && j >= 0)
+    {
+        if (inputChunk[i] != outputChunk[j])
+        {
+            return false;
+        }
+        i++;
+        j--;
+    }
+
+    return true;
+}
+
+void checkFileReversed(char *NEW_FILE_PATH, char *OLD_FILE_PATH)
+{
+    int inputFile = open(OLD_FILE_PATH, O_RDONLY);
+    int outputFile = open(NEW_FILE_PATH, O_RDONLY);
+    int inputFileSize = lseek(inputFile, 0, SEEK_END);
+    lseek(inputFile, 0, SEEK_SET);
+    int outputFileSize = lseek(outputFile, 0, SEEK_END);
+
+    int inputChunk = inputFileSize >= BUFFER_SIZE ? BUFFER_SIZE : inputFileSize;
+    int outputChunk = outputFileSize >= BUFFER_SIZE ? BUFFER_SIZE : outputFileSize;
+
+    int inputPointer = 0;
+    int outputPointer = outputFileSize;
+
+    bool isRev = true;
+    while (inputPointer < inputFileSize && outputPointer > 0)
+    {
+        char *inputBuffer = (char *)malloc(inputChunk);
+        char *outputBuffer = (char *)malloc(outputChunk);
+
+        lseek(inputFile, inputPointer, SEEK_SET);
+        read(inputFile, inputBuffer, inputChunk);
+        lseek(outputFile, -outputPointer, SEEK_END);
+        read(outputFile, outputBuffer, outputChunk);
+
+        if (!checkRev(inputBuffer, outputBuffer))
+        {
+            isRev = false;
+            cout << "Whether file contents are reversed in newfile: No\n";
+            break;
+        }
+
+        if (inputPointer + BUFFER_SIZE <= inputFileSize)
+        {
+            inputPointer += BUFFER_SIZE;
+            inputChunk = BUFFER_SIZE;
+        }
+        else
+        {
+            inputChunk = inputFileSize - inputPointer;
+            inputPointer = inputFileSize;
+        }
+
+        if (outputPointer - BUFFER_SIZE >= 0)
+        {
+            outputPointer -= BUFFER_SIZE;
+            outputChunk = BUFFER_SIZE;
+        }
+        else
+        {
+            outputChunk = outputPointer;
+            outputPointer = 0;
+        }
+
+        free(inputBuffer);
+        free(outputBuffer);
+    }
+
+    if (isRev == true)
+    {
+        cout << "Whether file contents are reversed in newfile: Yes\n";
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ios_base::sync_with_stdio();
     cin.tie(NULL);
     cout.tie(NULL);
 
-    const char *NEW_FILE_PATH = argv[1];
-    const char *OLD_FILE_PATH = argv[2];
-    const char *DIR_FILE_PATH = argv[3];
+    char *NEW_FILE_PATH = argv[1];
+    char *OLD_FILE_PATH = argv[2];
+    char *DIR_FILE_PATH = argv[3];
 
     string isDirCreated;
     struct stat dirInfo;
@@ -87,12 +175,14 @@ int main(int argc, char *argv[])
     else
     {
         isSizeSame = "No";
-        // cout << "Both Files Sizes are Same : No\n";
+        cout << "Both Files Sizes are Same : No\n";
     }
 
-    // printPermissions(NEW_FILE_PATH, "newfile");
-    // printPermissions(OLD_FILE_PATH, "old file");
-    // printPermissions(DIR_FILE_PATH, "directory");
+    checkFileReversed(OLD_FILE_PATH, NEW_FILE_PATH);
+
+    printPermissions(NEW_FILE_PATH, "newfile");
+    printPermissions(OLD_FILE_PATH, "old file");
+    printPermissions(DIR_FILE_PATH, "directory");
 
     return 0;
 }

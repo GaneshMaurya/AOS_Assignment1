@@ -10,6 +10,22 @@ using namespace std;
 // Define the buffer size beforehand.
 const int BUFFER_SIZE = 4000;
 
+string getOutputName(string str)
+{
+    string res = "";
+    int i = str.size() - 1;
+    while (i >= 0 && str[i] != '/')
+    {
+        res += str[i];
+        i--;
+    }
+
+    reverse(res.begin(), res.end());
+    res = "O_" + res;
+
+    return res;
+}
+
 void reverseString(string &str, int start, int end)
 {
     int i = start;
@@ -37,12 +53,14 @@ int main(int argc, char *argv[])
         // Reverse the file
         // Make a directory and file RWX access group and user
         // Check if folder is already created
-        int createDir = mkdir(FOLDER_PATH, 0750);
+        int createDir = mkdir(FOLDER_PATH, 0700);
+        chmod(FOLDER_PATH, 0700);
         if (createDir < 0 && errno == EEXIST)
         {
             // Folder already exists. Hence deleting all its contents.
             rmdir(FOLDER_PATH);
-            mkdir(FOLDER_PATH, 0750);
+            mkdir(FOLDER_PATH, 0700);
+            chmod(FOLDER_PATH, 0700);
         }
 
         // Open file in Read only mode
@@ -66,10 +84,11 @@ int main(int argc, char *argv[])
             }
             else
             {
-                string OUTPUT_FILE_NAME = "output.txt";
+                string OUTPUT_FILE_NAME = getOutputName(INPUT_FILE_PATH);
                 string OUTPUT_FILE_PATH = FOLDER_PATH + OUTPUT_FILE_NAME;
 
-                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0660);
+                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0600);
+                chmod(OUTPUT_FILE_PATH.c_str(), 0600);
                 if (outputFile < 0)
                 {
                     // Errors - Handle this
@@ -139,11 +158,14 @@ int main(int argc, char *argv[])
             cout << "Error. Start index is greater than End index.\n";
         }
 
-        if (mkdir(FOLDER_PATH, 0770) < 0 && errno == EEXIST)
+        int createDir = mkdir(FOLDER_PATH, 0700);
+        chmod(FOLDER_PATH, 0700);
+        if (createDir < 0 && errno == EEXIST)
         {
             // Folder already exists. Hence deleting all its contents.
             rmdir(FOLDER_PATH);
-            mkdir(FOLDER_PATH, 0750);
+            mkdir(FOLDER_PATH, 0700);
+            chmod(FOLDER_PATH, 0700);
         }
 
         // Open file in Read only mode
@@ -166,10 +188,11 @@ int main(int argc, char *argv[])
             }
             else
             {
-                string OUTPUT_FILE_NAME = "output.txt";
+                string OUTPUT_FILE_NAME = getOutputName(INPUT_FILE_PATH);
                 string OUTPUT_FILE_PATH = FOLDER_PATH + OUTPUT_FILE_NAME;
 
-                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0660);
+                int outputFile = open(OUTPUT_FILE_PATH.c_str(), O_RDWR | O_CREAT | O_TRUNC | O_APPEND, 0600);
+                chmod(OUTPUT_FILE_PATH.c_str(), 0600);
                 if (outputFile < 0)
                 {
                     // Errors - Handle this
@@ -315,6 +338,7 @@ int main(int argc, char *argv[])
                 }
 
                 double time2 = (double)clock() / CLOCKS_PER_SEC;
+                cout << "\n";
                 printf("File took %lfs to do the operations and write onto new text file.\n", time2 - time1);
                 close(inputFile);
                 close(outputFile);
